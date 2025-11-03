@@ -12,10 +12,10 @@ env_path = os.environ.get("ENV_FILE_PATH") or pathlib.Path(__file__).resolve().p
 config = Config(env_path)
 
 PROJECT_NAME = config("APP_NAME", cast=str, default="multi_modal_coach-agent")
-VERSION = config("APP_VERSION", cast=str)
-ALLOWED_ORIGINS = config("ALLOWED_ORIGINS", cast=list)
+VERSION = config("APP_VERSION", cast=str, default="1.0.0")
+ALLOWED_ORIGINS = config("ALLOWED_ORIGINS", cast=list, default=["*"])
 SECRET_KEY = config("SECRET_KEY", cast=str)
-ENV = config("ENV", cast=str)
+ENV = config("ENV", cast=str, default="development")
 LOG_PATH = config("AGENT_LOG_PATH", cast=str, default="agent_interactions.log")
 AGENT_API_KEY = config("AGENT_API_KEY", cast=str, default=None)
 TELEX_LOG_BASE = config("TELEX_LOG_BASE", cast=str, default="https://api.telex.im/agent-logs")
