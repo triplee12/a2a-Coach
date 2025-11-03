@@ -1,0 +1,13 @@
+{
+  "name": "multi_modal_coach",
+  "description": "Multi-Modal Coaching Agent — generates short learning plans and tracks progress.",
+  "author": "your-name",
+  "capabilities": ["planning", "progress_tracking", "motivation", "coaching"],
+  "a2a_version": "1.0.0",
+  "endpoints": {
+    "rpc": "/rpc",
+    "status": "/status"
+  },
+  "homepage": "https://your-public-hostname.example",
+  "schema_version": "1.0"
+}
