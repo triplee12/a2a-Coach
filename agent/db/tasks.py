@@ -1,12 +1,30 @@
 import os
 import asyncio
+import aioredis
 from fastapi import FastAPI
 from databases import Database
 from agent.core.config import DATABASE_URL
 from agent.core.logger import logger
+from agent.core.config import REDIS_URL
+
+redis = None
 
 MAX_RETRIES = 5
 INITIAL_DELAY = 2
+
+
+async def redis_connect(app: FastAPI):
+    global redis
+    redis = await aioredis.from_url(REDIS_URL)
+    await redis.set("agent_startup", "1")
+    app.state._redis = redis
+
+
+async def redis_disconnect(app: FastAPI):
+    global redis
+    if redis:
+        await redis.close()
+    app.state._redis = None
 
 
 async def connect_to_db(app: FastAPI) -> None:

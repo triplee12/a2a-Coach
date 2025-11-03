@@ -3,10 +3,15 @@ Logic for establishing database connections for the various app repositories
 """
 
 from typing import Callable, Type
+import redis
 from databases import Database
 from fastapi import Depends
 from starlette.requests import Request
 from agent.db.repositories.base import BaseRepository
+
+
+def get_redis(request: Request) -> redis.Redis:
+    return request.app.state._redis
 
 
 def get_database(request: Request) -> Database:
