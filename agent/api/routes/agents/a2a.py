@@ -43,7 +43,7 @@ async def agent_card():
 async def rpc_entry(
     req: Request,
     x_agent_api_key: Optional[str] = Header(None),
-    redis: redis.Redis = Depends(get_redis),
+    redis_: redis.Redis = Depends(get_redis),
     goal_repo: GoalRepository = get_repository(GoalRepository),
     message_repo: MessageRepository = get_repository(MessageRepository),
     user_repo: UserRepository = get_repository(UserRepository),
@@ -52,11 +52,14 @@ async def rpc_entry(
         body = await req.json()
         rpc = JsonRpcRequest(**body)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid JSON-RPC: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid JSON-RPC: {e}"
+        ) from e
 
     if rpc.method == "tasks/send":
         return await handle_task_send(
-            rpc, redis=redis, goal_repo=goal_repo,
+            rpc, redis_=redis_,
             message_repo=message_repo, user_repo=user_repo
         )
     elif rpc.method == "message/send":
@@ -66,7 +69,7 @@ async def rpc_entry(
         )
     elif rpc.method == "progress/update":
         return await handle_progress_update(
-            rpc, redis=redis
+            rpc, redis_=redis_
         )
     else:
         return JsonRpcResponse(id=rpc.id, error={"code": -32601, "message": "Method not found"})
@@ -74,7 +77,7 @@ async def rpc_entry(
 
 async def handle_task_send(
     rpc: JsonRpcRequest,
-    redis: redis.Redis = Depends(get_redis),
+    redis_: redis.Redis = Depends(get_redis),
     message_repo: MessageRepository = get_repository(MessageRepository),
     user_repo: UserRepository = get_repository(UserRepository),
 ):
@@ -91,18 +94,18 @@ async def handle_task_send(
     user_text = " ".join(text_inputs).strip() or task.get("title","")
 
     telex_sender = params.get("sender") or params.get("from") or params.get("user")
-    user = None
-    if telex_sender:
-        user = await user_repo.create_user(str(telex_sender))
+    # user = None
+    # if telex_sender:
+    #     user = await user_repo.create_user(str(telex_sender))
 
-    await message_repo.create_message(user.id if user else None, str(telex_sender) if telex_sender else None, user_text)
+    # await message_repo.create_message(user.id if user else None, str(telex_sender) if telex_sender else None, user_text)
 
     reply = run_gemini(user_text)
 
     session_key = f"session:{params.get('context_id') or str(uuid.uuid4())}"
-    if redis:
+    if redis_:
         try:
-            await redis.set(session_key, json.dumps({"last_user": user_text, "last_reply": reply}), ex=60*60*2)
+            await redis_.set(session_key, json.dumps({"last_user": user_text, "last_reply": reply}), ex=60*60*2)
         except Exception:
             pass
 
@@ -142,16 +145,16 @@ async def handle_message_send(
 
     reply = run_gemini(text)
 
-    await message_repo.create_message(None, params.get("sender"), text)
+    # await message_repo.create_message(None, params.get("sender"), text)
     return JsonRpcResponse(id=rpc.id, result={"message": {"text": reply}})
 
 
 async def handle_progress_update(
     rpc: JsonRpcRequest,
-    redis: redis.Redis = Depends(get_redis),
+    redis_: redis.Redis = Depends(get_redis),
 ):
     params = rpc.params or {}
-    await redis.rpush("progress_updates", json.dumps(params)) if redis else None
+    await redis_.rpush("progress_updates", json.dumps(params)) if redis_ else None
     return JsonRpcResponse(id=rpc.id, result={"status":"acknowledged"})
 
 
