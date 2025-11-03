@@ -6,11 +6,11 @@ from configparser import RawConfigParser
 from logging.config import fileConfig
 
 import alembic
-from psycopg2 import DatabaseError
+from psycopg import DatabaseError
 from sqlalchemy import engine_from_config, create_engine, pool
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[3]))
 
-from vine_family_medicine.core.config import DATABASE_URL, ENV
+from agent.core.config import DATABASE_URL, ENV
 
 alembic_ini_path = pathlib.Path(__file__).resolve().parents[1] / "alembic.ini"
 
