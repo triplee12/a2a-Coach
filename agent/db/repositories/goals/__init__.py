@@ -1,0 +1,1 @@
+from agent.db.repositories.goals.goal import GoalRepository as GoalRepository
