@@ -61,9 +61,9 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 def main():
     logger.info("Starting A2A-Coach API Platform...")
     uvicorn.run(
-        "agent.api.server:app",
+        "agent.main:app",
         host="0.0.0.0",
-        port=9011,
+        port=8000,
         reload=False if config.ENV.startswith("deployment") else True,
         workers=1
     )

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from agent.api.routes.agents import router as agents_router
+from agent.api.routes.agents.a2a import router as agents_router
 
 router = APIRouter()
 
