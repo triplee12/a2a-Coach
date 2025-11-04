@@ -20,7 +20,7 @@ This project implements a **Multi‑Modal AI Coaching Agent** connected to **Tel
 
 ## Requirements
 
-```
+```bash
 Python 3.10+
 Docker & Docker Compose
 Telex.im account
@@ -29,12 +29,26 @@ Gemini API Key
 
 ## Environment Variables
 
-Create `.env` file:
+Create `.env` file in the core directory:
 
-```
-GEMINI_API_KEY=your_gemini_key_here
+```bash
 AGENT_SIGNING_SECRET=shared_secret_with_telex
 TELEX_AGENT_ID=agent-id-here
+PROJECT_NAME=Multi-Modal Coach Agent (A2A)
+APP_VERSION="0.1.0"
+ALLOWED_ORIGINS=
+SECRET_KEY="SECRET_KEY"
+ENV="local"
+POSTGRES_USER="db user"
+POSTGRES_PASSWORD="db password"
+POSTGRES_HOST="localhost"
+POSTGRES_PORT="5432"
+POSTGRES_DB="db name"
+DATABASE_UR="postgresql+psycopg2://your_pass:your_db_name@localhost:5432/agent"
+GEMINI_API_KEY="your gemini api key"
+TELEX_LOG_BASE="https://api.telex.im/agent-logs"
+LOG_PATH="agent_interactions.log"
+AGENT_API_KEY=lllll
 ```
 
 ## Running with Docker
@@ -65,32 +79,33 @@ docker-compose down
 ```bash
 python3 -m venv venv
 source venv/bin/activate
+git clone https://github.com/triplee12/a2a-Coach.git
 pip install -r requirements.txt
 ```
 
 ### 2. Run FastAPI API
 
 ```bash
-uvicorn app.main:app --reload --port 8000
+uvicorn agent.main:app --reload --port 8000
 ```
 
 ### 3. Run background worker
 
 ```bash
-python app/worker.py
+python agent/core/worker.py
 ```
 
 ## Telex A2A Configuration
 
 Add your agent endpoint in Telex under A2A node:
 
-```
+```text
 https://your-server.com/rpc
 ```
 
 Make sure Telex sends headers:
 
-```
+```text
 X-A2A-Signature
 X-A2A-Timestamp
 ```
@@ -99,8 +114,8 @@ X-A2A-Timestamp
 
 ### Health
 
-```
-GET http://localhost:8000/status
+```text
+GET http://localhost:8000/a2a-coach/health/status
 ```
 
 Response:
@@ -114,24 +129,39 @@ Response:
 Send a JSON‑RPC message:
 
 ```bash
-curl -X POST http://localhost:8000/rpc \
- -H "Content-Type: application/json" \
- -d '{"id":1, "method":"coach.ask", "params":{"message":"I want to learn Python"}}'
+curl -X POST http://localhost:8000/a2a/rpc -H "Content-Type: application/json" -d '{
+  "jsonrpc":"2.0",
+  "method":"tasks/send",
+  "params": {
+    "context_id":"session_123",
+    "sender":"telex-user-001",
+    "task": {
+      "id":"t1",
+      "title":"Learn Golang in 8 weeks",
+      "type":"planning",
+      "parts":[{"text":"I want a Go roadmap and project ideas to help me achieve more experiences in each step from beginner to advanced. Also a progress tracking"}]
+    }
+  },
+  "id":"req1"
+}'
 ```
 
 ## Project Structure
 
-```
-app/
+```text
+agent/
+ ├─ api/
+ ├─ core/
+ |    ├─ .env
+ ├─ db/
+ ├─ models/
+ ├─ services/
  ├─ main.py (FastAPI entry)
- ├─ a2a_routes.py
- ├─ gemini_client.py
- ├─ coach_service.py
- ├─ worker.py
- ├─ utils.py (signature verification)
-Dockerfile
-docker-compose.yml
-.env
+ ├─ Dockerfile
+ ├─ docker-compose.yml
+ ├─ .gitignore
+ ├─ alembic.ini
+ ├─ requirements.txt
 ```
 
 ## Security
@@ -144,7 +174,7 @@ docker-compose.yml
 
 View real log stream:
 
-```
+```text
 https://api.telex.im/agent-logs/{channel-id}.txt
 ```
 

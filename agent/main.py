@@ -11,7 +11,7 @@ from agent.api.routes.health_route import router as health_router
 from agent.api.routes.agents.a2a import router as a2a_router
 
 
-BASE_PATH = "/a2a"
+BASE_PATH = "/a2a-coach"
 
 tags_metadata = [
     {"name": "Health", "description": "Health status of the API Endpoints"},
