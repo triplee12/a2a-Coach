@@ -88,6 +88,10 @@ pip install -r requirements.txt
 
 ```bash
 uvicorn agent.main:app --reload --port 8000
+
+# Or
+
+python -m agent.main
 ```
 
 ### 3. Run background worker
