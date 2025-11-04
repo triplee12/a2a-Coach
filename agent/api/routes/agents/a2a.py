@@ -22,7 +22,7 @@ async def telex_webhook(payload: TelexRequest):
     if not user_msg.strip():
         reply = "Hi! I'm your AI Coaching Agent. What are you working on today?"
     else:
-        reply = run_gemini(user_msg)
+        reply = await run_gemini(user_msg)
 
     return TelexResponse(message=reply)
 
@@ -37,7 +37,11 @@ async def agent_card():
             "multimodal", "coding", "communication", "personal_growth"
         ],
         "a2a_version": "1.0.0",
-        "endpoints": {"rpc": "/rpc", "status": "/status"}
+        "endpoints": {
+            "rpc": "/rpc",
+            "status": "/status",
+            "telex": "/coach"
+        }
     }
 
 
@@ -88,7 +92,7 @@ async def handle_task_send(
 
     user_text = " ".join(text_inputs).strip() or task.get("title", "")
 
-    reply = run_gemini(user_text)
+    reply = await run_gemini(user_text)
 
     session_key = f"session:{params.get('context_id') or str(uuid.uuid4())}"
     # if redis_:
@@ -131,7 +135,7 @@ async def handle_message_send(
         # g = await goal_repo.create_goal(user.id if user else None, title=title)
         return JsonRpcResponse(id=rpc.id, result={"message": f"Goal created: {title}"})
 
-    reply = run_gemini(text)
+    reply = await run_gemini(text)
 
     return JsonRpcResponse(id=rpc.id, result={"message": {"text": reply}})
 

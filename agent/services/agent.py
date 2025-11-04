@@ -23,7 +23,7 @@ Format:
 """
 
 
-def run_gemini(user_text: str) -> str:
+async def run_gemini(user_text: str) -> str:
     if not GEMINI_API_KEY:
         return short_plan_from_prompt(user_text)
 
