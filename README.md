@@ -80,6 +80,7 @@ docker-compose down
 python3 -m venv venv
 source venv/bin/activate
 git clone https://github.com/triplee12/a2a-Coach.git
+cd a2a-Coach
 pip install -r requirements.txt
 ```
 
@@ -129,7 +130,7 @@ Response:
 Send a JSON‑RPC message:
 
 ```bash
-curl -X POST http://localhost:8000/a2a/rpc -H "Content-Type: application/json" -d '{
+curl -X POST http://localhost:8000/a2a-coach/rpc -H "Content-Type: application/json" -d '{
   "jsonrpc":"2.0",
   "method":"tasks/send",
   "params": {
