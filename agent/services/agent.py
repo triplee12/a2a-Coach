@@ -23,32 +23,23 @@ Format:
 """
 
 
-# def run_gemini_agent(user_message: str) -> str:
-#     logger.info({"event": "message_received", "message": user_message})
-#     try:
-#         model = genai.GenerativeModel("gemini-pro")
-#         response = model.generate_content(f"{SYSTEM_PROMPT}\nUser: {user_message}")
-#         return response.text.strip()
-#     except Exception as e:
-#         logger.exception(e)
-#         return "I'm having trouble thinking right now. Try again!"
-
-
 def run_gemini(user_text: str) -> str:
     if not GEMINI_API_KEY:
         return short_plan_from_prompt(user_text)
 
     try:
-        model = genai.GenerativeModel("gemini-pro")
-        response = model.generate_content(contents=f"{SYSTEM_PROMPT}\nUser: {user_text}")
-        text = ""
-        if hasattr(response, "candidates"):
-            text = response.candidates[0].content
-        elif isinstance(response, dict) and "output" in response:
-            text = response["output"][0]["content"][0]["text"]
-        else:
-            text = str(response)
-        return text.strip()
+        genai.configure(api_key=GEMINI_API_KEY)
+
+        model = genai.GenerativeModel("gemini-2.5-flash")
+
+        prompt = f"{SYSTEM_PROMPT}\nUser: {user_text}"
+        response = model.generate_content(prompt)
+
+        if hasattr(response, "text"):
+            return response.text.strip()
+
+        return str(response).strip()
+
     except Exception as e:
         logger.exception(e)
         return short_plan_from_prompt(user_text) + "\n\n(LLM unavailable — served fallback)"

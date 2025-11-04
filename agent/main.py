@@ -5,13 +5,13 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import JSONResponse
 from fastapi import FastAPI, Request
 from agent.core import config
-from agent.core import tasks
+# from agent.core import tasks
 from agent.core.logger import logger
 from agent.api.routes.health_route import router as health_router
 from agent.api.routes.agents.a2a import router as a2a_router
 
 
-BASE_PATH = "/v1/a2a-coach"
+BASE_PATH = "/a2a"
 
 tags_metadata = [
     {"name": "Health", "description": "Health status of the API Endpoints"},
@@ -39,8 +39,8 @@ def get_application():
 
     fast_api.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY)
 
-    fast_api.add_event_handler("startup", tasks.create_start_app_handler(fast_api))
-    fast_api.add_event_handler("shutdown", tasks.create_stop_app_handler(fast_api))
+    # fast_api.add_event_handler("startup", tasks.create_start_app_handler(fast_api))
+    # fast_api.add_event_handler("shutdown", tasks.create_stop_app_handler(fast_api))
 
     fast_api.include_router(health_router, prefix=BASE_PATH)
     fast_api.include_router(a2a_router, prefix=BASE_PATH)
