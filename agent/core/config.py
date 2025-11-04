@@ -8,7 +8,7 @@ from databases import DatabaseURL
 from starlette.config import Config
 from starlette.datastructures import Secret
 
-env_path = os.environ.get("ENV_FILE_PATH") or pathlib.Path(__file__).resolve().parents[0] / ".env"
+env_path = os.environ.get("ENV_FILE_PATH") or pathlib.Path(__file__).resolve().parents[2] / ".env"
 config = Config(env_path)
 
 PROJECT_NAME = config("APP_NAME", cast=str, default="multi_modal_coach-agent")
