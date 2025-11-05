@@ -25,6 +25,10 @@ async def telex_webhook(payload: TelexRequest):
         else:
             reply = await run_gemini(user_msg)
 
+        if not reply.strip():
+            push_log_to_telex(payload.channel_id, f"User: {user_msg}")
+            push_log_to_telex(payload.channel_id, f"Agent: {reply}")
+
         return TelexResponse(message=reply)
     except Exception as e:
         logger.exception(e)
