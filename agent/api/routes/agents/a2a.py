@@ -17,14 +17,18 @@ router = APIRouter()
 
 @router.post("/coach", response_model=TelexResponse)
 async def telex_webhook(payload: TelexRequest):
-    user_msg = payload.message or ""
+    try:
+        user_msg = payload.message or ""
 
-    if not user_msg.strip():
-        reply = "Hi! I'm your AI Coaching Agent. What are you working on today?"
-    else:
-        reply = await run_gemini(user_msg)
+        if not user_msg.strip():
+            reply = "Hi! I'm your AI Coaching Agent. What are you working on today?"
+        else:
+            reply = await run_gemini(user_msg)
 
-    return TelexResponse(message=reply)
+        return TelexResponse(message=reply)
+    except Exception as e:
+        logger.exception(e)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
 @router.get("/.well-known/agent.json")
@@ -48,107 +52,93 @@ async def agent_card():
 @router.post("/rpc", response_model=JsonRpcResponse)
 async def rpc_entry(
     req: Request,
-    x_agent_api_key: Optional[str] = Header(None),
-    # redis_: redis.Redis = Depends(get_redis),
-    # goal_repo: GoalRepository = get_repository(GoalRepository),
-    # message_repo: MessageRepository = get_repository(MessageRepository),
-    # user_repo: UserRepository = get_repository(UserRepository),
 ) -> JsonRpcResponse:
     try:
         body = await req.json()
         rpc = JsonRpcRequest(**body)
     except Exception as e:
+        logger.exception(e)
         raise HTTPException(
             status_code=400,
             detail=f"Invalid JSON-RPC: {e}"
         ) from e
 
     if rpc.method == "tasks/send":
-        return await handle_task_send(rpc)  # , redis_, message_repo, user_repo
+        return await handle_task_send(rpc)
     elif rpc.method == "message/send":
-        return await handle_message_send(rpc)  # , goal_repo, message_repo, user_repo
+        return await handle_message_send(rpc)
     elif rpc.method == "progress/update":
-        return await handle_progress_update(rpc)  # , redis_
+        return await handle_progress_update(rpc)
     else:
         return JsonRpcResponse(id=rpc.id, error={"code": -32601, "message": "Method not found"})
 
 
-async def handle_task_send(
-    rpc: JsonRpcRequest,
-    # redis_: redis.Redis,
-    # message_repo: MessageRepository,
-    # user_repo: UserRepository,
-) -> JsonRpcResponse:
-    params = rpc.params or {}
-    task = params.get("task", {})
+async def handle_task_send(rpc: JsonRpcRequest) -> JsonRpcResponse:
+    try:
+        params = rpc.params or {}
+        task = params.get("task", {})
 
-    parts = task.get("parts", [])
-    text_inputs = []
-    for p in parts:
-        if isinstance(p, dict) and p.get("text"):
-            text_inputs.append(p["text"])
-        elif isinstance(p, str):
-            text_inputs.append(p)
+        parts = task.get("parts", [])
+        text_inputs = []
+        for p in parts:
+            if isinstance(p, dict) and p.get("text"):
+                text_inputs.append(p["text"])
+            elif isinstance(p, str):
+                text_inputs.append(p)
 
-    user_text = " ".join(text_inputs).strip() or task.get("title", "")
+        user_text = " ".join(text_inputs).strip() or task.get("title", "")
 
-    reply = await run_gemini(user_text)
+        reply = await run_gemini(user_text)
 
-    session_key = f"session:{params.get('context_id') or str(uuid.uuid4())}"
-    # if redis_:
-    #     try:
-    #         await redis_.set(session_key, json.dumps({"last_user": user_text, "last_reply": reply}), ex=7200)
-    #     except Exception:
-    #         pass
+        result = {
+            "task_id": task.get("id", str(uuid.uuid4())),
+            "status": "completed",
+            "parts": [{"type": "text", "text": reply}],
+            "context_id": params.get("context_id")
+        }
 
-    result = {
-        "task_id": task.get("id", str(uuid.uuid4())),
-        "status": "completed",
-        "parts": [{"type": "text", "text": reply}],
-        "context_id": params.get("context_id")
-    }
-
-    return JsonRpcResponse(id=rpc.id, result=result)
+        return JsonRpcResponse(id=rpc.id, result=result)
+    except Exception as e:
+        logger.exception(e)
+        return JsonRpcResponse(id=rpc.id, error={"code": -32602, "message": "Internal Server Error"})
 
 
-async def handle_message_send(
-    rpc: JsonRpcRequest,
-    # goal_repo: GoalRepository,
-    # message_repo: MessageRepository,
-    # user_repo: UserRepository,
-) -> JsonRpcResponse:
-    params = rpc.params or {}
-    message = params.get("message")
+async def handle_message_send(rpc: JsonRpcRequest) -> JsonRpcResponse:
+    try:
+        params = rpc.params or {}
+        message = params.get("message")
 
-    if isinstance(message, dict):
-        text = message.get("text")
-    else:
-        text = message
+        if isinstance(message, dict):
+            text = message.get("text")
+        else:
+            text = message
 
-    if not text:
-        return JsonRpcResponse(id=rpc.id, error={"code": -32602, "message": "Missing message text"})
+        if not text:
+            return JsonRpcResponse(id=rpc.id, error={"code": -32602, "message": "Missing message text"})
 
-    if text.lower().startswith(("create goal:", "new goal:")):
-        title = text.split(":", 1)[1].strip()
-        sender = params.get("sender")
-        # user = await user_repo.create_user(str(sender)) if sender else None
-        # g = await goal_repo.create_goal(user.id if user else None, title=title)
-        return JsonRpcResponse(id=rpc.id, result={"message": f"Goal created: {title}"})
+        if text.lower().startswith(("create goal:", "new goal:")):
+            title = text.split(":", 1)[1].strip()
+            sender = params.get("sender")
+            return JsonRpcResponse(id=rpc.id, result={"message": f"Goal created: {title}"})
 
-    reply = await run_gemini(text)
+        reply = await run_gemini(text)
 
-    return JsonRpcResponse(id=rpc.id, result={"message": {"text": reply}})
+        return JsonRpcResponse(id=rpc.id, result={"message": {"text": reply}})
+    except Exception as e:
+        logger.exception(e)
+        return JsonRpcResponse(id=rpc.id, error={"code": -32602, "message": "Internal Server Error"})
 
 
-async def handle_progress_update(
-    rpc: JsonRpcRequest,
-    # redis_: redis.Redis,
-) -> JsonRpcResponse:
-    params = rpc.params or {}
-    # if redis_:
-    #     await redis_.rpush("progress_updates", json.dumps(params))
+async def handle_progress_update(rpc: JsonRpcRequest) -> JsonRpcResponse:
+    try:
+        params = rpc.params or {}
+        # if redis_:
+        #     await redis_.rpush("progress_updates", json.dumps(params))
 
-    return JsonRpcResponse(id=rpc.id, result={"status": "acknowledged"})
+        return JsonRpcResponse(id=rpc.id, result={"status": "acknowledged"})
+    except Exception as e:
+        logger.exception(e)
+        return JsonRpcResponse(id=rpc.id, error={"code": -32602, "message": "Internal Server Error"})
 
 
 def push_log_to_telex(channel_id: str, content: str):
