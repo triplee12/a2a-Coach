@@ -56,7 +56,7 @@ AGENT_API_KEY=lllll
 ### Build + Start
 
 ```bash
-docker-compose up --build -d
+docker compose up --build -d
 ```
 
 ### Check logs
