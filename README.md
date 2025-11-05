@@ -151,13 +151,24 @@ curl -X POST http://localhost:8000/a2a-coach/rpc -H "Content-Type: application/j
 }'
 ```
 
+Send Telex WebHook message:
+
+```bash
+curl -X POST http://localhost:8000/a2a-coach/coach -H "Content-Type: application/json" -d '{
+  "id": "session_12345",
+  "message": "Help me design a 30-day Python learning roadmap",
+  "sender": "telex-user-001",
+  "channel_id": "channel_abc123",
+  "workflow_id": "workflow_001"
+}'
+```
+
 ## Project Structure
 
 ```text
 agent/
  ├─ api/
  ├─ core/
- |    ├─ .env
  ├─ db/
  ├─ models/
  ├─ services/
@@ -167,6 +178,7 @@ agent/
  ├─ .gitignore
  ├─ alembic.ini
  ├─ requirements.txt
+ ├─ .env
 ```
 
 ## Security
